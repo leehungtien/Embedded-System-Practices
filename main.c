@@ -32,44 +32,58 @@ int main(void)
 	BSP_MAGNETO_Init();
 	BSP_PSENSOR_Init();
 
-	int counter = 0 ;
+	int counter = 0;
+
+	// set pbPressed to be 0 in the beginning to signify that the pushbutton wasn't pressed beforehand
+	int pbPressed = 0;
+	GPIO_PinState A;
 
 	while (1) // Polling Mode
 	{
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
-		counter += 1;
+		A = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
 
-		// When time is 1 second
-		if (counter == 4) {
-			float accel_data[3];
-			int16_t accel_data_i16[3] = { 0 };			// array to store the x, y and z readings.
-			BSP_ACCELERO_AccGetXYZ(accel_data_i16);		// read accelerometer
-			// the function above returns 16 bit integers which are 100 * acceleration_in_m/s2. Converting to float to print the actual acceleration. (in mGravity)
-			accel_data[0] = (float)accel_data_i16[0] / 100.0f; // divide by 100 cause mGravity = 10^-3 * 10 = 10^-2
-			accel_data[1] = (float)accel_data_i16[1] / 100.0f;
-			accel_data[2] = (float)accel_data_i16[2] / 100.0f;
+		if (A == 0) {
 
-			float magneto_data[3];
-			int16_t magneto_data_i16[3] = { 0 };
-			BSP_MAGNETO_GetXYZ(magneto_data_i16); // values in mGauss = 10^-3 Gauss so divide by 1000
-			magneto_data[0] = (float)magneto_data_i16[0] / 1000.0f;
-			magneto_data[1] = (float)magneto_data_i16[1] / 1000.0f;
-			magneto_data[2] = (float)magneto_data_i16[2] / 1000.0f;
-
-			float pressure_data;
-			pressure_data = BSP_PSENSOR_ReadPressure();
-
-			printf("Accel X : %f; Accel Y : %f; Accel Z : %f; Magneto X: %f; Magneto Y: %f; Magneto Z: %f; Pressure: %f\n", accel_data[0], accel_data[1], accel_data[2], magneto_data[0], magneto_data[1], magneto_data[2], pressure_data);
-
+			// indicate that pbPressed
+			pbPressed = !pbPressed;
 		}
 
-		else if (counter == 6) {
-			float temp_data;
-			temp_data = BSP_TSENSOR_ReadTemp();			// read temperature sensor
-			printf("Temperature : %f\n", temp_data);
+		// If button is pressed to stop
+		if (pbPressed == 0) {
+			counter++;
 
-			// Reset counter
-			counter = 0;
+			// When time is 1 second
+			if (counter == 4) {
+				float accel_data[3];
+				int16_t accel_data_i16[3] = { 0 };			// array to store the x, y and z readings.
+				BSP_ACCELERO_AccGetXYZ(accel_data_i16);		// read accelerometer
+				// the function above returns 16 bit integers which are 100 * acceleration_in_m/s2. Converting to float to print the actual acceleration. (in mGravity)
+				accel_data[0] = (float)accel_data_i16[0] / 100.0f; // divide by 100 cause mGravity = 10^-3 * 10 = 10^-2
+				accel_data[1] = (float)accel_data_i16[1] / 100.0f;
+				accel_data[2] = (float)accel_data_i16[2] / 100.0f;
+
+				float magneto_data[3];
+				int16_t magneto_data_i16[3] = { 0 };
+				BSP_MAGNETO_GetXYZ(magneto_data_i16); // values in mGauss = 10^-3 Gauss so divide by 1000
+				magneto_data[0] = (float)magneto_data_i16[0] / 1000.0f;
+				magneto_data[1] = (float)magneto_data_i16[1] / 1000.0f;
+				magneto_data[2] = (float)magneto_data_i16[2] / 1000.0f;
+
+				float pressure_data;
+				pressure_data = BSP_PSENSOR_ReadPressure();
+
+				printf("Accel X : %f; Accel Y : %f; Accel Z : %f; Magneto X: %f; Magneto Y: %f; Magneto Z: %f; Pressure: %f\n", accel_data[0], accel_data[1], accel_data[2], magneto_data[0], magneto_data[1], magneto_data[2], pressure_data);
+			}
+
+			else if (counter == 6) {
+				float temp_data;
+				temp_data = BSP_TSENSOR_ReadTemp();			// read temperature sensor
+				printf("Temperature : %f\n", temp_data);
+
+				// Reset counter
+				counter = 0;
+			}
 		}
 
 		HAL_Delay(250);	// read once a ~second. Input is in milliseconds
@@ -94,4 +108,13 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  // Configure GPIO pin button
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  GPIO_InitStruct.Pin = BUTTON_EXTI13_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 }
+
