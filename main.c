@@ -74,6 +74,7 @@ int main(void)
 
 		HAL_Delay(250);	// read once a ~second. Input is in milliseconds
 
+	}
 
 }
 
