@@ -16,13 +16,14 @@ UART_HandleTypeDef huart1;
 
 int main(void)
 {
+	/* Reset of all peripherals, Initializes Systick etc. */
+	HAL_Init();
+
+	/* UART initialization  */
+	UART1_Init();
 	while (1) {
 		int seconds_count = 0;
-		/* Reset of all peripherals, Initializes Systick etc. */
-		HAL_Init();
-
-		/* UART initialization  */
-		UART1_Init();
+		
 		char input_char;
 		int i;
 		char input_message[64] = {0};
