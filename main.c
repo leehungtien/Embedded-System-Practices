@@ -41,24 +41,28 @@ int main(void)
 	int pbPressed = 0;
 	GPIO_PinState A;
 
+	int currentDuration;
+	int startTime = HAL_GetTick();
 	while (1) // Polling Mode
 	{
-		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
-		A = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
-
-
+		currentDuration = HAL_GetTick() - startTime;
 		if (A == 0) {
 
 			// indicate that pbPressed
 			pbPressed = !pbPressed;
 		}
 
-		// If button is pressed to stop
-		if (pbPressed == 0) {
-			counter++;
+		// For every 250ms
+		if (currentDuration % 250 == 0) {
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+			A = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+		}
 
-			// When time is 1 second
-			if (counter == 4) {
+		// For every 1 second
+		if (currentDuration % 1000 == 0) {
+
+			// If button is not pressed (i.e. print to terminal), pbPressed should equal to 0
+			if (pbPressed == 0) {
 				float accel_data[3];
 				int16_t accel_data_i16[3] = { 0 };			// array to store the x, y and z readings.
 				BSP_ACCELERO_AccGetXYZ(accel_data_i16);		// read accelerometer
@@ -84,21 +88,19 @@ int main(void)
 				sprintf(message, "Accel X : %f; Accel Y : %f; Accel Z : %f; Magneto X: %f; Magneto Y: %f; Magneto Z: %f; Pressure: %f\n", accel_data[0], accel_data[1], accel_data[2], magneto_data[0], magneto_data[1], magneto_data[2], pressure_data);
 				HAL_UART_Transmit(&huart1, (uint8_t*)message, strlen(message),0xFFFF);
 			}
+		}
 
-			else if (counter == 6) {
+		// For every 1.5 second
+		if (currentDuration % 1500 == 0) {
+
+			if (pbPressed == 0) {
 				float temp_data;
 				temp_data = BSP_TSENSOR_ReadTemp();			// read temperature sensor
 				char message_temperature[32];
 				sprintf(message_temperature, "Temperature : %f\n", temp_data);
 				HAL_UART_Transmit(&huart1, (uint8_t*)message_temperature, strlen(message_temperature),0xFFFF);
-
-				// Reset counter
-				counter = 0;
 			}
 		}
-
-		HAL_Delay(250);	// read once a ~second. Input is in milliseconds
-
 	}
 
 }
